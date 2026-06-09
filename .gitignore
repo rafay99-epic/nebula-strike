@@ -8,6 +8,9 @@ dist/
 *.log
 npm-debug.log*
 
+# Test screenshots
+scripts/*.png
+
 # Editor / OS
 .DS_Store
 .vscode/

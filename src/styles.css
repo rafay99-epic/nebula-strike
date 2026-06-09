@@ -15,6 +15,9 @@ html, body {
   background: #02030a;
   font-family: "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
   color: var(--hud);
+  touch-action: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
 }
 
 #app, #app canvas { position: fixed; inset: 0; display: block; }
@@ -154,6 +157,7 @@ html, body {
   transform: translateX(-50%);
   text-align: center; letter-spacing: 2px;
 }
+#sector-label { font-size: 10px; letter-spacing: 3px; opacity: 0.75; margin-bottom: 4px; }
 #wave-num { font-size: 18px; }
 #hostiles { font-size: 11px; opacity: 0.85; margin-top: 3px; }
 #score { font-size: 12px; color: var(--energy); margin-top: 3px; }
@@ -228,3 +232,216 @@ html, body {
   padding: 12px 28px;
 }
 #go-restart:hover { background: rgba(77,232,255,0.15); box-shadow: 0 0 18px rgba(77,232,255,0.4); }
+#go-best { font-size: 13px; letter-spacing: 2px; color: var(--energy); }
+
+/* ---------- nav marker ---------- */
+#nav-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--energy);
+  text-shadow: 0 0 10px rgba(255,210,77,0.7);
+}
+#nav-arrow { font-size: 18px; line-height: 1; }
+#nav-text { font-size: 10px; letter-spacing: 1px; margin-top: 3px; white-space: nowrap; }
+#nav-marker.offscreen #nav-text { display: none; }
+
+/* ---------- flight assist chip ---------- */
+#assist-chip {
+  position: absolute; left: 24px; bottom: 174px;
+  font-size: 10px; letter-spacing: 2px;
+  padding: 5px 10px;
+  border: 1px solid var(--hud-dim);
+  background: var(--hud-bg);
+  opacity: 0.85;
+}
+#assist-chip.newton { border-color: var(--energy); color: var(--energy); }
+
+/* ---------- warp flash ---------- */
+#warp-flash {
+  position: absolute; inset: 0;
+  background: #cfeaff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease-in;
+}
+#warp-flash.active { opacity: 1; }
+
+/* ---------- ship select ---------- */
+#ship-select {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(4,14,24,0.55) 0%, rgba(2,4,10,0.92) 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 26px;
+  pointer-events: auto;
+}
+#ss-title {
+  font-size: 42px; letter-spacing: 14px; color: #fff;
+  text-shadow: 0 0 30px var(--hud);
+}
+#ss-sub { font-size: 12px; letter-spacing: 4px; opacity: 0.8; }
+#ss-cards { display: flex; gap: 22px; }
+.ss-card {
+  width: 240px;
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-dim);
+  padding: 18px 18px 16px;
+  cursor: pointer;
+  position: relative;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.ss-card:hover {
+  border-color: var(--hud);
+  box-shadow: 0 0 26px rgba(77,232,255,0.3);
+  transform: translateY(-4px);
+}
+.ss-key {
+  position: absolute; top: 12px; right: 20px;
+  width: 22px; height: 22px; line-height: 22px;
+  text-align: center; border: 1px solid var(--hud);
+  font-size: 12px;
+}
+.ss-name { font-size: 16px; color: #fff; letter-spacing: 1px; }
+.ss-role { font-size: 10px; letter-spacing: 2px; color: var(--hud); margin: 4px 0 10px; }
+.ss-desc { font-size: 11px; opacity: 0.75; min-height: 42px; line-height: 1.5; }
+.ss-stats { margin-top: 10px; }
+.ss-stat { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 9px; }
+.ss-stat span { width: 30px; letter-spacing: 1px; opacity: 0.8; }
+.ss-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.07); border: 1px solid var(--hud-dim); }
+.ss-bar i { display: block; height: 100%; background: linear-gradient(90deg, #2b9ed9, #4de8ff); }
+
+/* ---------- key hints ---------- */
+#key-hints {
+  position: absolute; right: 24px; bottom: 184px;
+  font-size: 9px; letter-spacing: 1.5px; opacity: 0.55;
+}
+
+/* ---------- planet prompt ---------- */
+#planet-prompt {
+  position: absolute; left: 50%; bottom: 26%;
+  transform: translateX(-50%);
+  padding: 12px 26px;
+  background: var(--hud-bg);
+  border: 1px solid var(--hud);
+  font-size: 15px; letter-spacing: 3px;
+  color: #fff;
+  text-shadow: 0 0 12px var(--hud);
+  box-shadow: 0 0 24px rgba(77,232,255,0.3);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  animation: prompt-pulse 1.4s ease-in-out infinite;
+  pointer-events: auto;
+  cursor: pointer;
+}
+@keyframes prompt-pulse { 50% { box-shadow: 0 0 40px rgba(77,232,255,0.55); } }
+
+/* ---------- surface mode ---------- */
+#surface-panel { right: 24px; top: 24px; width: 230px; }
+#sp-alt, #sp-crystals { font-size: 12px; margin: 4px 0; }
+#sp-phys { font-size: 9px; letter-spacing: 1.5px; color: var(--energy); margin-bottom: 6px; }
+#sp-crystals { color: var(--energy); }
+#sp-hint { font-size: 9px; letter-spacing: 1px; opacity: 0.6; margin-top: 8px; }
+
+.surface-mode #radar,
+.surface-mode #wave-panel,
+.surface-mode #weapon-panel,
+.surface-mode #target-panel,
+.surface-mode #target-bracket,
+.surface-mode #lead-reticle,
+.surface-mode #nav-marker,
+.surface-mode #crosshair,
+.surface-mode #key-hints { display: none !important; }
+
+/* ---------- touch controls ---------- */
+#touch-ui { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+/* menus must sit above the touch layer */
+#ship-select, #pause-overlay, #gameover-overlay { z-index: 30; }
+#planet-prompt { z-index: 25; }
+#joy-zone {
+  position: absolute; left: 0; top: 25%; bottom: 0; width: 46%;
+  pointer-events: auto;
+  touch-action: none;
+}
+#joy-base {
+  position: absolute;
+  width: 124px; height: 124px;
+  border: 1.5px solid var(--hud-dim);
+  border-radius: 50%;
+  background: rgba(8, 28, 40, 0.35);
+  transform: translate(-50%, -50%);
+  display: none;
+}
+#joy-base.active { display: block; }
+#joy-nub {
+  position: absolute; left: 50%; top: 50%;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: rgba(77, 232, 255, 0.4);
+  border: 1.5px solid var(--hud);
+  transform: translate(-50%, -50%);
+}
+#touch-main {
+  position: absolute; right: 14px; bottom: 96px;
+  display: flex; flex-direction: column; gap: 10px;
+  align-items: flex-end;
+  pointer-events: auto;
+}
+#touch-small {
+  position: absolute; right: 14px; top: 30%;
+  display: flex; flex-direction: column; gap: 8px;
+  pointer-events: auto;
+}
+.tbtn {
+  pointer-events: auto;
+  font-family: inherit;
+  color: var(--hud);
+  background: rgba(8, 28, 40, 0.55);
+  border: 1.5px solid var(--hud-dim);
+  border-radius: 50%;
+  width: 64px; height: 64px;
+  font-size: 10px; letter-spacing: 1px;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tbtn.big {
+  width: 86px; height: 86px;
+  font-size: 13px;
+  border-color: var(--hud);
+  color: #fff;
+}
+.tbtn.sm { width: 46px; height: 46px; font-size: 9px; }
+.tbtn.held, .tbtn:active {
+  background: rgba(77, 232, 255, 0.35);
+  box-shadow: 0 0 18px rgba(77, 232, 255, 0.5);
+}
+
+/* ---------- responsive / phone layout ---------- */
+@media (max-width: 920px), (pointer: coarse) {
+  #status-panel { left: 10px; bottom: 10px; width: 200px; padding: 7px 10px; }
+  #status-panel .panel-title { display: none; }
+  #weapon-panel { bottom: 8px; gap: 5px; }
+  .wslot { padding: 5px 8px; font-size: 9px; gap: 5px; pointer-events: auto; }
+  .wslot .wname { display: none; }
+  #radar { width: 100px; height: 100px; right: 110px; bottom: 10px; }
+  #target-panel { right: 10px; top: 10px; width: 160px; padding: 7px 10px; font-size: 10px; }
+  #wave-panel { top: 8px; }
+  #wave-num { font-size: 14px; }
+  #help { display: none; }
+  #key-hints { display: none; }
+  #assist-chip { left: 10px; bottom: 132px; font-size: 8px; }
+  #comms { top: 84px; font-size: 11px; width: 90%; text-align: center; }
+  #banner { font-size: 22px; letter-spacing: 4px; }
+  #ss-title { font-size: 26px; letter-spacing: 8px; }
+  #ss-sub { font-size: 10px; }
+  #ss-cards { flex-direction: row; gap: 8px; padding: 0 8px; }
+  .ss-card { width: 31vw; padding: 10px; }
+  .ss-desc { display: none; }
+  .ss-name { font-size: 12px; }
+  #surface-panel { right: 10px; top: 10px; width: 170px; padding: 7px 10px; }
+  #planet-prompt { font-size: 12px; bottom: 33%; padding: 10px 18px; }
+}
+
+@media (pointer: fine) {
+  #touch-ui { display: none; }
+}

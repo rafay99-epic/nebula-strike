@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "bun run scripts/smoke.ts && bun run scripts/combat-test.ts && bun run scripts/flows-test.ts && bun run scripts/progression-test.ts && bun run scripts/surface-test.ts && bun run scripts/mobile-test.ts && bun run scripts/gravity-test.ts"
   },
   "dependencies": {
     "three": "^0.180.0"

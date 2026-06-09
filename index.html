@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <title>NEBULA STRIKE — Sector 7</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 28,28 16,21 4,28' fill='%234de8ff'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/src/styles.css" />
@@ -64,9 +65,31 @@
 
     <!-- wave / score -->
     <div id="wave-panel">
+      <div id="sector-label">SECTOR 1 — ASTERIA BELT</div>
       <div id="wave-num">WAVE 1</div>
       <div id="hostiles">HOSTILES: 0</div>
       <div id="score">SCORE 0</div>
+    </div>
+
+    <!-- nav marker (planets / jump gate) -->
+    <div id="nav-marker" class="hidden">
+      <div id="nav-arrow">◆</div>
+      <div id="nav-text">KHEPRI · 1200m</div>
+    </div>
+    <div id="assist-chip">FLIGHT ASSIST <span id="assist-state">ON</span> [X]</div>
+    <div id="key-hints">[H] CONTROLS · [V] CHANGE SHIP · [N] NAV · [G] ENTER PLANET</div>
+    <div id="warp-flash"></div>
+
+    <!-- planet enter / leave prompt -->
+    <div id="planet-prompt" class="hidden"></div>
+
+    <!-- surface mode readout -->
+    <div id="surface-panel" class="panel hidden">
+      <div class="panel-title" id="sp-name">SURFACE</div>
+      <div id="sp-phys">—</div>
+      <div id="sp-alt">ALT 0 m</div>
+      <div id="sp-crystals">CRYSTALS 0 / 12</div>
+      <div id="sp-hint">CLIMB HIGH TO RETURN TO SPACE</div>
     </div>
 
     <!-- radar -->
@@ -92,6 +115,8 @@
         <tr><td>SPACE</td><td>Fire weapon</td></tr>
         <tr><td>1–4</td><td>Switch weapon</td></tr>
         <tr><td>T</td><td>Cycle target</td></tr>
+        <tr><td>N</td><td>Cycle nav target</td></tr>
+        <tr><td>X</td><td>Toggle flight assist</td></tr>
         <tr><td>P</td><td>Pause</td></tr>
       </table>
     </div>
@@ -100,7 +125,71 @@
     <div id="gameover-overlay" class="hidden">
       <div id="go-title">VESSEL DESTROYED</div>
       <div id="go-score"></div>
+      <div id="go-best"></div>
       <button id="go-restart">RELAUNCH [R]</button>
+    </div>
+
+    <!-- ship selection -->
+    <div id="ship-select">
+      <div id="ss-title">NEBULA STRIKE</div>
+      <div id="ss-sub">SELECT YOUR VESSEL — [1] [2] [3] OR CLICK</div>
+      <div id="ss-cards">
+        <div class="ss-card" id="ship-0" data-ship="0">
+          <div class="ss-key">1</div>
+          <div class="ss-name">SR-7 STRIKER</div>
+          <div class="ss-role">MULTIROLE FIGHTER</div>
+          <div class="ss-desc">Balanced hull. Reliable in any engagement.</div>
+          <div class="ss-stats">
+            <div class="ss-stat"><span>HULL</span><div class="ss-bar"><i style="width:62%"></i></div></div>
+            <div class="ss-stat"><span>SHLD</span><div class="ss-bar"><i style="width:68%"></i></div></div>
+            <div class="ss-stat"><span>SPD</span><div class="ss-bar"><i style="width:70%"></i></div></div>
+            <div class="ss-stat"><span>AGI</span><div class="ss-bar"><i style="width:72%"></i></div></div>
+          </div>
+        </div>
+        <div class="ss-card" id="ship-1" data-ship="1">
+          <div class="ss-key">2</div>
+          <div class="ss-name">KV-2 WRAITH</div>
+          <div class="ss-role">LIGHT INTERCEPTOR</div>
+          <div class="ss-desc">Fragile, fast, razor agile. Never stop moving.</div>
+          <div class="ss-stats">
+            <div class="ss-stat"><span>HULL</span><div class="ss-bar"><i style="width:42%"></i></div></div>
+            <div class="ss-stat"><span>SHLD</span><div class="ss-bar"><i style="width:54%"></i></div></div>
+            <div class="ss-stat"><span>SPD</span><div class="ss-bar"><i style="width:96%"></i></div></div>
+            <div class="ss-stat"><span>AGI</span><div class="ss-bar"><i style="width:92%"></i></div></div>
+          </div>
+        </div>
+        <div class="ss-card" id="ship-2" data-ship="2">
+          <div class="ss-key">3</div>
+          <div class="ss-name">HK-9 BASTION</div>
+          <div class="ss-role">HEAVY GUNBOAT</div>
+          <div class="ss-desc">Slow twin-hull brawler. Massive shields and capacitors.</div>
+          <div class="ss-stats">
+            <div class="ss-stat"><span>HULL</span><div class="ss-bar"><i style="width:98%"></i></div></div>
+            <div class="ss-stat"><span>SHLD</span><div class="ss-bar"><i style="width:94%"></i></div></div>
+            <div class="ss-stat"><span>SPD</span><div class="ss-bar"><i style="width:46%"></i></div></div>
+            <div class="ss-stat"><span>AGI</span><div class="ss-bar"><i style="width:48%"></i></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- touch controls (shown on coarse-pointer devices) -->
+    <div id="touch-ui" class="hidden">
+      <div id="joy-zone">
+        <div id="joy-base"><div id="joy-nub"></div></div>
+      </div>
+      <div id="touch-main">
+        <button id="tb-fire" class="tbtn big">FIRE</button>
+        <button id="tb-thrust" class="tbtn">THRUST</button>
+        <button id="tb-boost" class="tbtn">BOOST</button>
+        <button id="tb-brake" class="tbtn">BRAKE</button>
+      </div>
+      <div id="touch-small">
+        <button id="tb-action" class="tbtn sm">⏏</button>
+        <button id="tb-target" class="tbtn sm">TGT</button>
+        <button id="tb-nav" class="tbtn sm">NAV</button>
+        <button id="tb-ship" class="tbtn sm">SHIP</button>
+        <button id="tb-pause" class="tbtn sm">‖</button>
+      </div>
     </div>
   </div>
 

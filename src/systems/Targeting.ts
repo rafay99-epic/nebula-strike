@@ -32,8 +32,8 @@ export class TargetingSystem {
     const fwd = player.forward;
     const pos = player.position;
 
-    // validate current target
-    if (this.target && (!this.target.alive || !this.inCone(this.target, pos, fwd, DROP_CONE, MAX_RANGE * 1.15))) {
+    // validate current target (cloaked ships break the lock)
+    if (this.target && (!this.target.alive || this.target.cloaked || !this.inCone(this.target, pos, fwd, DROP_CONE, MAX_RANGE * 1.15))) {
       this.target = null;
       this.lockProgress = 0;
     }
@@ -71,7 +71,7 @@ export class TargetingSystem {
     const fwd = player.forward;
     const pos = player.position;
     const candidates = enemies
-      .filter((e) => e.alive && this.inCone(e, pos, fwd, ACQUIRE_CONE * 1.6, MAX_RANGE))
+      .filter((e) => e.alive && !e.cloaked && this.inCone(e, pos, fwd, ACQUIRE_CONE * 1.6, MAX_RANGE))
       .sort((a, b) => this.angleTo(a, pos, fwd) - this.angleTo(b, pos, fwd));
     if (candidates.length === 0) return;
     const idx = this.target ? candidates.indexOf(this.target) : -1;
@@ -84,7 +84,7 @@ export class TargetingSystem {
     let best: Enemy | null = null;
     let bestScore = Infinity;
     for (const e of enemies) {
-      if (!e.alive) continue;
+      if (!e.alive || e.cloaked) continue;
       const to = e.position.clone().sub(pos);
       const dist = to.length();
       if (dist > MAX_RANGE) continue;

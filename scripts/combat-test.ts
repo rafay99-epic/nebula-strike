@@ -29,7 +29,9 @@ page.on('pageerror', (err) => errors.push(`[pageerror] ${err.message}`));
 
 await page.goto('http://localhost:5198', { waitUntil: 'networkidle0', timeout: 30000 });
 
-// wait for wave 1 to spawn
+// pick a ship, then wait for wave 1 to spawn
+await page.waitForFunction(() => (window as any).__NEBULA, { timeout: 20000 });
+await page.evaluate(() => (window as any).__NEBULA.selectShip(0));
 await page.waitForFunction(
   () => (window as any).__NEBULA?.enemies?.length > 0,
   { timeout: 20000 }

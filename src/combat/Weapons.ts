@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Enemy } from '../entities/Enemy';
+import type { Mine } from '../entities/Mine';
 import type { PlayerShip } from '../entities/PlayerShip';
 import type { AsteroidInfo } from '../world/Environment';
 import type { Effects } from '../effects/Effects';
@@ -58,10 +59,12 @@ export interface CombatWorld {
   scene: THREE.Scene;
   player: PlayerShip;
   enemies: Enemy[];
+  mines: Mine[];
   asteroids: AsteroidInfo[];
   effects: Effects;
   sfx: Sfx;
   onEnemyDestroyed: (enemy: Enemy) => void;
+  onMineDetonated: (mine: Mine) => void;
 }
 
 const _tmp = new THREE.Vector3();
@@ -296,7 +299,7 @@ export class WeaponSystem {
         } else {
           p.velocity.setLength(p.speed);
         }
-        if (Math.random() < 0.5) effects.trailPuff(p.mesh.position, 0xffcc88);
+        effects.emitTrail(p.mesh.position, _tmp.copy(p.velocity).multiplyScalar(-0.05), 0xffaa55, 0.5);
       }
 
       _prev.copy(p.mesh.position);
@@ -312,6 +315,17 @@ export class WeaponSystem {
             this.applyDamage(e, p.def, p.mesh.position);
             if (p.def.splash) this.splash(p.mesh.position, p.def, e);
             effects.smallExplosion(p.mesh.position, p.def.color);
+            dead = true;
+            break;
+          }
+        }
+      }
+      // vs mines (shooting them detonates them safely from range)
+      if (!dead) {
+        for (const m of this.world.mines) {
+          if (!m.alive) continue;
+          if (segmentHitsSphere(_prev, p.mesh.position, m.position, m.radius + 0.8)) {
+            this.world.onMineDetonated(m);
             dead = true;
             break;
           }

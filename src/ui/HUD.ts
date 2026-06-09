@@ -42,12 +42,23 @@ export class HUD {
   private pauseOverlay = el<HTMLDivElement>('pause-overlay');
   private gameoverOverlay = el<HTMLDivElement>('gameover-overlay');
   private goScore = el<HTMLDivElement>('go-score');
+  private goBest = el<HTMLDivElement>('go-best');
   private wslots: HTMLDivElement[] = [0, 1, 2, 3].map((i) => el<HTMLDivElement>(`wslot-${i}`));
+  private sectorLabel = el<HTMLDivElement>('sector-label');
+  private navMarker = el<HTMLDivElement>('nav-marker');
+  private navArrow = el<HTMLDivElement>('nav-arrow');
+  private navText = el<HTMLDivElement>('nav-text');
+  private assistChip = el<HTMLDivElement>('assist-chip');
+  private assistState = el<HTMLSpanElement>('assist-state');
+  private warpFlash = el<HTMLDivElement>('warp-flash');
+  private shipSelect = el<HTMLDivElement>('ship-select');
 
   private commsTimer = 0;
   private bannerTimer = 0;
   private damageFlash = 0;
   private projected = new THREE.Vector3();
+  /** mines shown on the radar; set each frame by the game */
+  radarMines: { alive: boolean; position: THREE.Vector3 }[] = [];
 
   constructor() {
     el<HTMLButtonElement>('go-restart').addEventListener('click', () => window.location.reload());
@@ -61,9 +72,149 @@ export class HUD {
     this.pauseOverlay.classList.toggle('hidden', !paused);
   }
 
-  showGameOver(score: number, wave: number): void {
-    this.goScore.textContent = `FINAL SCORE ${score} — REACHED WAVE ${wave}`;
+  showGameOver(score: number, sector: number, best: number): void {
+    this.goScore.textContent = `FINAL SCORE ${score} — REACHED SECTOR ${sector}`;
+    this.goBest.textContent = score >= best ? '★ NEW PERSONAL BEST ★' : `PERSONAL BEST ${best}`;
     this.gameoverOverlay.classList.remove('hidden');
+  }
+
+  setSector(index: number, name: string): void {
+    this.sectorLabel.textContent = `SECTOR ${index + 1} — ${name}`;
+  }
+
+  setAssist(on: boolean): void {
+    this.assistState.textContent = on ? 'ON' : 'OFF · NEWTONIAN';
+    this.assistChip.classList.toggle('newton', !on);
+  }
+
+  setWarpFlash(active: boolean): void {
+    this.warpFlash.classList.toggle('active', active);
+  }
+
+  hideShipSelect(): void {
+    this.shipSelect.classList.add('hidden');
+  }
+
+  showShipSelect(): void {
+    this.shipSelect.classList.remove('hidden');
+  }
+
+  onWeaponTap(handler: (index: number) => void): void {
+    for (let i = 0; i < this.wslots.length; i++) {
+      this.wslots[i].addEventListener('pointerdown', () => handler(i));
+    }
+  }
+
+  // ---------- planet prompt / surface mode ----------
+
+  private planetPrompt = el<HTMLDivElement>('planet-prompt');
+  private surfacePanel = el<HTMLDivElement>('surface-panel');
+  private spName = el<HTMLDivElement>('sp-name');
+  private spPhys = el<HTMLDivElement>('sp-phys');
+  private spAlt = el<HTMLDivElement>('sp-alt');
+  private spCrystals = el<HTMLDivElement>('sp-crystals');
+  private hudRoot = el<HTMLDivElement>('hud');
+
+  onPlanetPromptTap(handler: () => void): void {
+    this.planetPrompt.addEventListener('pointerdown', handler);
+  }
+
+  showPlanetPrompt(text: string): void {
+    this.planetPrompt.textContent = text;
+    this.planetPrompt.classList.remove('hidden');
+  }
+
+  hidePlanetPrompt(): void {
+    this.planetPrompt.classList.add('hidden');
+  }
+
+  setSurfaceMode(on: boolean, planetName = '', physLabel = ''): void {
+    this.hudRoot.classList.toggle('surface-mode', on);
+    this.surfacePanel.classList.toggle('hidden', !on);
+    if (on) {
+      this.spName.textContent = `${planetName} — SURFACE SURVEY`;
+      this.spPhys.textContent = physLabel;
+    }
+    this.hidePlanetPrompt();
+  }
+
+  /** Minimal HUD refresh while flying on a planet surface. */
+  updateSurface(dt: number, player: import('../entities/PlayerShip').PlayerShip, altitude: number, crystals: number, total: number): void {
+    this.barHull.style.width = `${(player.hull / player.maxHull) * 100}%`;
+    this.barShield.style.width = `${(player.shield / player.maxShield) * 100}%`;
+    this.barEnergy.style.width = `${(player.energy / player.maxEnergy) * 100}%`;
+    this.valHull.textContent = `${Math.ceil(player.hull)}`;
+    this.valShield.textContent = `${Math.ceil(player.shield)}`;
+    this.valEnergy.textContent = `${Math.floor(player.energy)}`;
+    this.valSpeed.textContent = `${Math.round(player.velocity.length())}`;
+    this.spAlt.textContent = `ALT ${Math.max(0, Math.round(altitude))} m`;
+    this.spCrystals.textContent = `CRYSTALS ${crystals} / ${total}`;
+    this.tickOverlays(dt);
+  }
+
+  /** Comms/banner/damage-flash decay — shared by space and surface modes. */
+  tickOverlays(dt: number): void {
+    this.damageFlash = Math.max(0, this.damageFlash - dt * 2.2);
+    this.damageVignette.style.boxShadow = `inset 0 0 140px rgba(255, 30, 40, ${this.damageFlash * 0.55})`;
+    if (this.commsTimer > 0) {
+      this.commsTimer -= dt;
+      if (this.commsTimer <= 0) this.comms.style.opacity = '0';
+    }
+    if (this.bannerTimer > 0) {
+      this.bannerTimer -= dt;
+      if (this.bannerTimer <= 0) this.banner.classList.add('hidden');
+    }
+  }
+
+  onShipCard(handler: (index: number, confirm: boolean) => void): void {
+    for (let i = 0; i < 3; i++) {
+      const card = document.getElementById(`ship-${i}`)!;
+      card.addEventListener('mouseenter', () => handler(i, false));
+      card.addEventListener('pointerup', () => handler(i, true));
+    }
+  }
+
+  /**
+   * Project a nav target into screen space. Off-screen / behind targets are
+   * clamped to the screen edge with the arrow rotated to point the way.
+   */
+  updateNav(camera: THREE.PerspectiveCamera, target: { name: string; position: THREE.Vector3 } | null, playerPos: THREE.Vector3): void {
+    if (!target) {
+      this.navMarker.classList.add('hidden');
+      return;
+    }
+    this.navMarker.classList.remove('hidden');
+    const dist = Math.round(target.position.distanceTo(playerPos));
+    const v = this.projected.copy(target.position).project(camera);
+    const behind = v.z > 1;
+    let x = (v.x * 0.5 + 0.5) * window.innerWidth;
+    let y = (-v.y * 0.5 + 0.5) * window.innerHeight;
+    if (behind) {
+      // mirror so the marker pushes toward the correct edge
+      x = window.innerWidth - x;
+      y = window.innerHeight - y;
+    }
+    const margin = 56;
+    const offscreen = behind || x < margin || x > window.innerWidth - margin || y < margin || y > window.innerHeight - margin;
+    if (offscreen) {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      let dx = x - cx;
+      let dy = y - cy;
+      if (behind && Math.abs(dx) < 1 && Math.abs(dy) < 1) dy = 1; // dead-center behind
+      const scale = Math.min((cx - margin) / Math.abs(dx || 1e-5), (cy - margin) / Math.abs(dy || 1e-5));
+      x = cx + dx * scale;
+      y = cy + dy * scale;
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      this.navArrow.style.transform = `rotate(${angle + 90}deg)`;
+      this.navMarker.classList.add('offscreen');
+    } else {
+      this.navArrow.style.transform = 'rotate(0deg)';
+      this.navMarker.classList.remove('offscreen');
+    }
+    this.navMarker.style.left = `${x}px`;
+    this.navMarker.style.top = `${y}px`;
+    this.navText.textContent = `${target.name} · ${dist}m`;
   }
 
   showComms(message: string, duration = 4): void {
@@ -172,20 +323,7 @@ export class HUD {
     // --- boundary warning ---
     this.boundaryWarning.classList.toggle('hidden', !nearBoundary);
 
-    // --- damage vignette decay ---
-    this.damageFlash = Math.max(0, this.damageFlash - dt * 2.2);
-    this.damageVignette.style.boxShadow = `inset 0 0 140px rgba(255, 30, 40, ${this.damageFlash * 0.55})`;
-
-    // --- comms fade ---
-    if (this.commsTimer > 0) {
-      this.commsTimer -= dt;
-      if (this.commsTimer <= 0) this.comms.style.opacity = '0';
-    }
-    if (this.bannerTimer > 0) {
-      this.bannerTimer -= dt;
-      if (this.bannerTimer <= 0) this.banner.classList.add('hidden');
-    }
-
+    this.tickOverlays(dt);
     this.drawRadar(player, enemies);
   }
 
@@ -217,7 +355,7 @@ export class HUD {
     const sin = Math.sin(-heading);
 
     for (const e of enemies) {
-      if (!e.alive) continue;
+      if (!e.alive || e.cloaked) continue;
       const rel = e.position.clone().sub(player.position);
       const rx = rel.x * cos - rel.z * sin;
       const rz = rel.x * sin + rel.z * cos;
@@ -225,12 +363,21 @@ export class HUD {
       if (d > range) continue;
       const px = c + (rx / range) * c * 0.95;
       const py = c + (rz / range) * c * 0.95;
-      const colors = ['#ffc24d', '#ff5533', '#dd44ff', '#57ff9a', '#ff2244'];
-      ctx.fillStyle = colors[e.def.tier - 1] ?? '#fff';
+      ctx.fillStyle = `#${e.def.color.toString(16).padStart(6, '0')}`;
       const dotSize = 1.5 + e.def.tier * 0.7;
       ctx.beginPath();
       ctx.arc(px, py, dotSize, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    for (const m of this.radarMines) {
+      if (!m.alive) continue;
+      const rel = m.position.clone().sub(player.position);
+      const rx = rel.x * cos - rel.z * sin;
+      const rz = rel.x * sin + rel.z * cos;
+      if (Math.hypot(rx, rz) > range) continue;
+      ctx.fillStyle = '#ff3333';
+      ctx.fillRect(c + (rx / range) * c * 0.95 - 1, c + (rz / range) * c * 0.95 - 1, 2, 2);
     }
 
     // player marker

@@ -4,6 +4,19 @@ export class Input {
   onFirstInteraction: (() => void) | null = null;
   private interacted = false;
 
+  // virtual (touch) controls — analog axes and held buttons
+  vPitch = 0;
+  vYaw = 0;
+  vThrust = false;
+  vBrake = false;
+  vBoost = false;
+  vFire = false;
+
+  /** Touch buttons inject one-shot presses through the same path as keys. */
+  pressVirtual(code: string): void {
+    this.pressed.add(code);
+  }
+
   constructor() {
     window.addEventListener('keydown', (e) => {
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {

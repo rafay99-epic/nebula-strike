@@ -30,6 +30,12 @@ page.on('pageerror', (err) => errors.push(`[pageerror] ${err.message}`));
 
 await page.goto('http://localhost:5199', { waitUntil: 'networkidle0', timeout: 30000 });
 
+// ship select screen
+await page.waitForFunction(() => (window as any).__NEBULA, { timeout: 20000 });
+await new Promise((r) => setTimeout(r, 1200));
+await page.screenshot({ path: 'scripts/shot-shipselect.png' });
+await page.evaluate(() => (window as any).__NEBULA.selectShip(0));
+
 // let the game boot and run a couple of seconds
 await new Promise((r) => setTimeout(r, 2500));
 

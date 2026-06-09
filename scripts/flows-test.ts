@@ -20,6 +20,8 @@ const errors: string[] = [];
 page.on('pageerror', (err) => errors.push(err.message));
 
 await page.goto('http://localhost:5197', { waitUntil: 'networkidle0', timeout: 30000 });
+await page.waitForFunction(() => (window as any).__NEBULA, { timeout: 20000 });
+await page.evaluate(() => (window as any).__NEBULA.selectShip(0));
 await page.waitForFunction(() => (window as any).__NEBULA?.enemies?.length > 0, { timeout: 20000 });
 
 let pass = true;

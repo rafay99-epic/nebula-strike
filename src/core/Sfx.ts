@@ -6,6 +6,12 @@ export class Sfx {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
+  private humGain: GainNode | null = null;
+  private humOsc: OscillatorNode | null = null;
+
+  get context(): AudioContext | null {
+    return this.ctx;
+  }
 
   ensure(): void {
     if (!this.ctx) {
@@ -17,8 +23,29 @@ export class Sfx {
       this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const data = this.noiseBuffer.getChannelData(0);
       for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+
+      // persistent engine hum, modulated by throttle each frame
+      this.humOsc = this.ctx.createOscillator();
+      this.humOsc.type = 'sawtooth';
+      this.humOsc.frequency.value = 48;
+      const humFilter = this.ctx.createBiquadFilter();
+      humFilter.type = 'lowpass';
+      humFilter.frequency.value = 240;
+      this.humGain = this.ctx.createGain();
+      this.humGain.gain.value = 0;
+      this.humOsc.connect(humFilter).connect(this.humGain).connect(this.master);
+      this.humOsc.start();
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume();
+  }
+
+  /** Engine hum level — call every frame with throttle 0..1. */
+  setHum(throttle: number, boosting: boolean): void {
+    if (!this.ctx || !this.humGain || !this.humOsc || this.ctx.state !== 'running') return;
+    const t = this.ctx.currentTime;
+    const target = throttle * (boosting ? 0.16 : 0.09);
+    this.humGain.gain.setTargetAtTime(target, t, 0.08);
+    this.humOsc.frequency.setTargetAtTime(44 + throttle * 40 + (boosting ? 26 : 0), t, 0.12);
   }
 
   private get ready(): boolean {
@@ -115,5 +142,10 @@ export class Sfx {
   playerHit(): void {
     this.noise(0.3, 0.3, 1100, 100);
     this.osc('sawtooth', 240, 60, 0.3, 0.18);
+  }
+
+  thunder(): void {
+    this.noise(1.6, 0.35, 500, 40);
+    this.osc('sine', 70, 24, 1.4, 0.25);
   }
 }
