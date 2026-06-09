@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEBULA STRIKE — Sector 7</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 28,28 16,21 4,28' fill='%234de8ff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="hud">
+    <!-- center reticle -->
+    <div id="crosshair">
+      <span class="ch-h"></span><span class="ch-v"></span>
+      <span class="ch-dot"></span>
+    </div>
+    <div id="lead-reticle"></div>
+
+    <!-- target bracket + lock ring -->
+    <div id="target-bracket">
+      <span class="tb tb-tl"></span><span class="tb tb-tr"></span>
+      <span class="tb tb-bl"></span><span class="tb tb-br"></span>
+      <svg id="lock-svg" viewBox="0 0 100 100">
+        <circle id="lock-ring-bg" cx="50" cy="50" r="44" />
+        <circle id="lock-ring" cx="50" cy="50" r="44" />
+      </svg>
+      <div id="lock-label">SCANNING</div>
+    </div>
+
+    <!-- target info panel -->
+    <div id="target-panel" class="panel hidden">
+      <div class="panel-title">TARGET LOCK</div>
+      <div id="tp-name">—</div>
+      <div id="tp-tier">—</div>
+      <div id="tp-dist">—</div>
+      <div class="mini-bar"><div id="tp-shield" class="mini-fill shield"></div></div>
+      <div class="mini-bar"><div id="tp-hull" class="mini-fill hull"></div></div>
+    </div>
+
+    <!-- player status -->
+    <div id="status-panel" class="panel">
+      <div class="panel-title">VESSEL STATUS</div>
+      <div class="bar-row"><span class="bar-label">HULL</span>
+        <div class="bar"><div id="bar-hull" class="bar-fill hull"></div></div>
+        <span id="val-hull" class="bar-val">100</span></div>
+      <div class="bar-row"><span class="bar-label">SHLD</span>
+        <div class="bar"><div id="bar-shield" class="bar-fill shield"></div></div>
+        <span id="val-shield" class="bar-val">100</span></div>
+      <div class="bar-row"><span class="bar-label">ENRG</span>
+        <div class="bar"><div id="bar-energy" class="bar-fill energy"></div></div>
+        <span id="val-energy" class="bar-val">100</span></div>
+      <div id="speed-readout">VEL <span id="val-speed">0</span> m/s</div>
+    </div>
+
+    <!-- weapons -->
+    <div id="weapon-panel">
+      <div class="wslot" id="wslot-0"><span class="wkey">1</span><span class="wname">PULSE LASER</span><div class="wcool"></div></div>
+      <div class="wslot" id="wslot-1"><span class="wkey">2</span><span class="wname">PLASMA CANNON</span><div class="wcool"></div></div>
+      <div class="wslot" id="wslot-2"><span class="wkey">3</span><span class="wname">SEEKER MISSILES</span><div class="wcool"></div></div>
+      <div class="wslot" id="wslot-3"><span class="wkey">4</span><span class="wname">RAILGUN</span><div class="wcool"></div></div>
+    </div>
+
+    <!-- wave / score -->
+    <div id="wave-panel">
+      <div id="wave-num">WAVE 1</div>
+      <div id="hostiles">HOSTILES: 0</div>
+      <div id="score">SCORE 0</div>
+    </div>
+
+    <!-- radar -->
+    <canvas id="radar" width="150" height="150"></canvas>
+
+    <!-- comms line -->
+    <div id="comms"></div>
+
+    <!-- warnings / overlays -->
+    <div id="boundary-warning" class="hidden">⚠ LEAVING COMBAT ZONE — TURN BACK ⚠</div>
+    <div id="damage-vignette"></div>
+    <div id="banner" class="hidden"></div>
+
+    <div id="help" class="panel">
+      <div class="panel-title">FLIGHT CONTROLS — [H] TO HIDE</div>
+      <table>
+        <tr><td>W / S</td><td>Thrust forward / brake</td></tr>
+        <tr><td>A / D</td><td>Yaw left / right</td></tr>
+        <tr><td>↑ / ↓</td><td>Pitch down / up</td></tr>
+        <tr><td>← / →</td><td>Yaw (alt)</td></tr>
+        <tr><td>Q / E</td><td>Roll</td></tr>
+        <tr><td>SHIFT</td><td>Afterburner</td></tr>
+        <tr><td>SPACE</td><td>Fire weapon</td></tr>
+        <tr><td>1–4</td><td>Switch weapon</td></tr>
+        <tr><td>T</td><td>Cycle target</td></tr>
+        <tr><td>P</td><td>Pause</td></tr>
+      </table>
+    </div>
+
+    <div id="pause-overlay" class="hidden"><div>‖ PAUSED — [P] TO RESUME</div></div>
+    <div id="gameover-overlay" class="hidden">
+      <div id="go-title">VESSEL DESTROYED</div>
+      <div id="go-score"></div>
+      <button id="go-restart">RELAUNCH [R]</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
